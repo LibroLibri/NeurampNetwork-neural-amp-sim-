@@ -45,6 +45,24 @@ def convert_to_wav(filename, data, samplerate=44100, target_datatype='float32', 
     return data
 
 
+def split_into_chunks(data, chunk_size=22050):
+    # Calculate how many chunks are necesary
+    n_chunks = int(chunk_size / float(data.shape[0]) - (chunk_size / float(data.shape[0])) % 1)
+    if chunk_size % data.shape[0] != 0:
+        n_chunks += 1
+    # Create chunks filled with 0s
+    chunks = []
+    # Put data in the chunks
+    while True: 
+        if data.shape[0] != 0:
+            chunks.append(data[:chunk_size])
+            data = data[chunk_size:]
+        else:
+            break
+    while chunks[-1].shape[0] != chunk_size:
+        chunks[-1] = np.append(chunks[-1], (0))
+    return chunks
+
 class InputError(Exception):
     """Exception raised for errors in the input.
 
