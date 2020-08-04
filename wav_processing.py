@@ -36,8 +36,10 @@ def convert_to_array(filename, target_datatype='float32', target_samplerate=4410
     
 
 def convert_to_wav(filename, data, samplerate=44100, target_datatype='float32', source_range=[-1.0, 1.0]):
+    # Join chunks
+    data = np.concatenate(data)
     # Take data to target range and datatype
-    if WAV_format_ranges[target_datatype] != source_range:
+    if WAV_format_ranges[np.dtype(target_datatype)] != source_range:
         data = np.interp(data, source_range, WAV_format_ranges[np.dtype(target_datatype)])
     data = data.astype(target_datatype)
     # Write file and return
