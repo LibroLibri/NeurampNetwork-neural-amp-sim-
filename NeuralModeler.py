@@ -7,10 +7,11 @@ from os.path import join
 from sklearn.model_selection import train_test_split
 
 
-TEST_SIZE = 0.3
-EPOCHS = 210
+TEST_SIZE = 0.2
+EPOCHS = 70
 CHUNK_SIZE = 1000
 
+ACCURACY_TRESHOLD = 0.0001
 
 from wav_processing import convert_to_array, split_into_chunks
 
@@ -20,17 +21,54 @@ def main():
     if len(argv) != 4:
         print(USAGE)
         exit(1)
+
     dataIN, dataOUT = load_data(argv[1], argv[2])
     x_train, x_test, y_train, y_test = train_test_split(
         np.array(dataIN), np.array(dataOUT), test_size=TEST_SIZE
     )
+
+    del dataIN
+    del dataOUT
+
     model = get_model()
 
-    model.fit(x_train, y_train, epochs=EPOCHS)
+    model.fit(x_train, y_train, epochs=15)
     model.evaluate(x_test,  y_test, verbose=2)
 
+    
+    last_accuracy = model.evaluate(x_test,  y_test, verbose=2)[1]
+
     filename = argv[3]
+
     model.save(filename)
+
+    model.fit(x_train, y_train, epochs=10)
+
+    new_accuracy = model.evaluate(x_test,  y_test, verbose=2)[1]
+
+    if last_accuracy > new_accuracy:
+        print('WARNING: Trained for too many EPOCHS, accuracy is DECREASING')
+        exit(0)
+        
+    last_accuracy = new_accuracy
+    model.save(filename)
+
+    while True:
+            model.fit(x_train, y_train, epochs=10)
+
+            new_accuracy = model.evaluate(x_test,  y_test, verbose=2)[1]
+
+            if last_accuracy > new_accuracy:
+                print('WARNING: Trained for too many EPOCHS, accuracy is DECREASING')
+                break
+
+            if new_accuracy - last_accuracy < ACCURACY_TRESHOLD:
+                break
+
+            last_accuracy = new_accuracy
+            model.save(filename)
+            
+    
 
 
 
@@ -61,9 +99,9 @@ def get_model():
 
         tf.keras.layers.Dense(300, activation='relu'),
 
-        tf.keras.layers.Dense(250, activation='relu'),
+        tf.keras.layers.Dense(300, activation='relu'),
 
-        tf.keras.layers.Dense(250, activation='relu'),
+        tf.keras.layers.Dense(300, activation='relu'),
 
         tf.keras.layers.Dense(CHUNK_SIZE, activation='tanh')
     ])
